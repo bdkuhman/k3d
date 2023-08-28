@@ -1,7 +1,7 @@
-ARG K3S_TAG="v1.21.2-k3s1"
+ARG K3S_TAG="v1.27.4+k3s1"
 FROM rancher/k3s:$K3S_TAG as k3s
 
-FROM nvidia/cuda:11.2.0-base-ubuntu18.04
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
 
 ARG NVIDIA_CONTAINER_RUNTIME_VERSION
 ENV NVIDIA_CONTAINER_RUNTIME_VERSION=$NVIDIA_CONTAINER_RUNTIME_VERSION
@@ -19,7 +19,8 @@ RUN curl -s -L https://nvidia.github.io/nvidia-container-runtime/ubuntu18.04/nvi
 RUN apt-get update && \
     apt-get -y install nvidia-container-runtime=${NVIDIA_CONTAINER_RUNTIME_VERSION}
 
-COPY --from=k3s / /
+COPY --from=k3s /bin /bin
+COPY --from=k3s /etc /etc
 
 RUN mkdir -p /etc && \
     echo 'hosts: files dns' > /etc/nsswitch.conf
@@ -42,6 +43,7 @@ VOLUME /var/lib/cni
 VOLUME /var/log
 
 ENV PATH="$PATH:/bin/aux"
+ENV CRI_CONFIG_FILE=/var/lib/rancher/k3s/agent/etc/crictl.yaml
 
 ENTRYPOINT ["/bin/k3s"]
 CMD ["agent"]
